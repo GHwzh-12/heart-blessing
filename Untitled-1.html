@@ -3,65 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>爱心祝福弹窗测试</title>
+    <title>爱心祝福弹窗 - GitHub Pages版</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Microsoft YaHei', sans-serif;
-            background: #1a1a2e;
-            color: white;
-            text-align: center;
-            padding: 50px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white; min-height: 100vh; display: flex;
+            flex-direction: column; align-items: center;
+            justify-content: center; padding: 20px; text-align: center;
         }
-        h1 {
-            color: #ff6b6b;
+        .container {
+            max-width: 800px; width: 100%; background: rgba(255,255,255,0.05);
+            border-radius: 20px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-        .heart {
-            font-size: 100px;
-            color: red;
-            margin: 30px;
-            animation: beat 1s infinite alternate;
+        h1 { color: #ff6b6b; font-size: 2.5rem; margin-bottom: 20px; }
+        .success { color: #06d6a0; font-size: 1.5rem; margin: 20px; font-weight: bold; }
+        .heart-area {
+            width: 300px; height: 300px; position: relative; margin: 20px auto;
+            background: rgba(255,255,255,0.02); border-radius: 10px;
+            border: 2px dashed rgba(255,255,255,0.1);
         }
-        @keyframes beat {
-            from { transform: scale(1); }
-            to { transform: scale(1.2); }
+        .popup {
+            position: absolute; background: #ff6b9d; color: white; padding: 8px 12px;
+            border-radius: 8px; font-size: 14px; font-weight: bold; opacity: 0;
+            transform: scale(0.5); transition: 0.3s; cursor: pointer; text-align: center;
+            box-shadow: 0 4px 10px rgba(255,107,157,0.5);
         }
-        .qr-placeholder {
-            background: white;
-            width: 200px;
-            height: 200px;
-            margin: 20px auto;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: black;
+        .qrcode-box {
+            background: white; width: 200px; height: 200px; margin: 20px auto;
+            border-radius: 10px; padding: 15px; display: flex;
+            align-items: center; justify-content: center; flex-direction: column;
+            color: #333; font-weight: bold;
+        }
+        button {
+            background: #06d6a0; color: white; border: none; padding: 12px 25px;
+            border-radius: 25px; font-size: 16px; margin: 10px; cursor: pointer;
             font-weight: bold;
         }
-        .success {
-            color: #06d6a0;
-            font-size: 24px;
-            margin: 20px;
-        }
+        #stopBtn { background: #ef476f; }
+        .footer { margin-top: 30px; color: #a5b4fc; font-size: 14px; }
+        .url { color: #ffd166; word-break: break-all; font-size: 12px; }
     </style>
 </head>
 <body>
-    <h1>爱心祝福弹窗测试页面</h1>
-    <div class="success">✓ GitHub Pages 部署成功！</div>
-    <div class="heart">❤️</div>
-    <p>这是一个测试页面，证明您的GitHub Pages已经正常工作。</p>
-    <p>当前页面链接：<br><strong id="pageUrl"></strong></p>
-    <p>请将上面的链接分享给朋友，或用手机扫码访问。</p>
-    
-    <div class="qr-placeholder">
-        二维码占位符<br>（实际页面会显示真实二维码）
-    </div>
-    
-    <script>
-        // 显示当前页面链接
-        document.getElementById('pageUrl').textContent = window.location.href;
+    <div class="container">
+        <h1>❤️ 爱心祝福弹窗 ❤️</h1>
+        <div class="success">✅ GitHub Pages 部署成功！</div>
         
-        // 提示用户
-        alert("页面加载成功！如果您看到此消息，说明GitHub Pages工作正常。");
+        <div class="qrcode-box" id="qrcode">
+            <div style="font-size: 3rem; color: #073b4c;">📱</div>
+            <div style="font-weight: bold; margin-top: 10px;">爱心祝福二维码</div>
+            <div id="qrcodeText" style="font-size: 12px; margin-top: 15px; color: #666;">
+                正在加载...
+            </div>
+        </div>
+        
+        <div class="heart-area" id="heartContainer"></div>
+        
+        <div>
+            <button onclick="startAnimation()">开始祝福</button>
+            <button onclick="stopAnimation()" id="stopBtn">停止效果</button>
+        </div>
+        
+        <div class="footer">
+            <p>设计灵感来自：桐人、保持好心情、好好爱自己</p>
+            <p>您的GitHub Pages链接：</p>
+            <p class="url" id="pageUrl"></p>
+            <p>将此链接分享给朋友，手机扫码即可查看效果！</p>
+        </div>
+    </div>
+
+    <script>
+        // 祝福语
+        const blessings = [
+            "桐人", "保持好心情", "好好爱自己", 
+            "发给你的朋友，让他开心一整天",
+            "开心每一天", "幸福永相伴", "健康平安"
+        ];
+        
+        let popups = [];
+        
+        // 爱心坐标函数
+        function getHeartPoints(count) {
+            const points = [];
+            for(let i = 0; i < count; i++) {
+                const t = (i / count) * Math.PI * 2;
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);
+                points.push({
+                    x: 150 - x * 8,
+                    y: 150 - y * 8
+                });
+            }
+            return points;
+        }
+        
+        // 开始动画
+        function startAnimation() {
+            const container = document.getElementById('heartContainer');
+            container.innerHTML = '';
+            popups = [];
+            
+            const points = getHeartPoints(blessings.length);
+            
+            // 创建弹窗
+            for(let i = 0; i < blessings.length; i++) {
+                setTimeout(() => {
+                    const popup = document.createElement('div');
+                    popup.className = 'popup';
+                    popup.textContent = blessings[i];
+                    popup.style.left = points[i].x + 'px';
+                    popup.style.top = points[i].y + 'px';
+                    popup.style.background = [
+                        '#ff6b9d', '#06d6a0', '#ffd166', '#118ab2'
+                    ][i % 4];
+                    
+                    popup.onclick = function() {
+                        this.style.opacity = '0';
+                        this.style.transform = 'scale(0.5)';
+                        setTimeout(() => this.remove(), 300);
+                    };
+                    
+                    container.appendChild(popup);
+                    popups.push(popup);
+                    
+                    // 显示动画
+                    setTimeout(() => {
+                        popup.style.opacity = '1';
+                        popup.style.transform = 'scale(1)';
+                    }, 10);
+                    
+                    // 最后一个完成后开始消失
+                    if(i === blessings.length - 1) {
+                        setTimeout(() => {
+                            startDisappear();
+                        }, 1000);
+                    }
+                }, i * 200);
+            }
+        }
+        
+        // 开始消失动画
+        function startDisappear() {
+            for(let i = 0; i < popups.length; i++) {
+                setTimeout(() => {
+                    if(popups[i]) {
+                        popups[i].style.opacity = '0';
+                        popups[i].style.transform = 'scale(0.5)';
+                        setTimeout(() => {
+                            if(popups[i] && popups[i].parentNode) {
+                                popups[i].parentNode.removeChild(popups[i]);
+                            }
+                        }, 300);
+                    }
+                }, i * 150);
+            }
+            
+            // 重新开始
+            setTimeout(() => {
+                startAnimation();
+            }, popups.length * 150 + 1000);
+        }
+        
+        // 停止动画
+        function stopAnimation() {
+            popups.forEach(popup => {
+                if(popup && popup.parentNode) {
+                    popup.style.opacity = '0';
+                    popup.style.transform = 'scale(0.5)';
+                    setTimeout(() => popup.remove(), 300);
+                }
+            });
+            popups = [];
+        }
+        
+        // 生成二维码
+        function generateQRCode() {
+            const qrcodeText = document.getElementById('qrcodeText');
+            const pageUrl = window.location.href;
+            const pageUrlElement = document.getElementById('pageUrl');
+            
+            // 显示当前URL
+            pageUrlElement.textContent = pageUrl;
+            
+            // 生成二维码图片
+            const img = new Image();
+            img.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(pageUrl)}&color=ff6b6b&bgcolor=ffffff`;
+            
+            img.onload = function() {
+                document.getElementById('qrcode').innerHTML = '';
+                document.getElementById('qrcode').appendChild(img);
+                qrcodeText.textContent = '手机扫码查看效果';
+            };
+            
+            img.onerror = function() {
+                qrcodeText.innerHTML = `
+                    <div>✅ 部署成功！</div>
+                    <div style="margin-top: 5px; font-size: 10px;">
+                        请访问：<br>${pageUrl}
+                    </div>
+                `;
+            };
+        }
+        
+        // 页面加载
+        document.addEventListener('DOMContentLoaded', function() {
+            generateQRCode();
+            setTimeout(startAnimation, 2000);
+        });
     </script>
 </body>
 </html>
+
